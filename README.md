@@ -4,7 +4,17 @@
 # README
 
 ## Prerequisites
-Create a new repository for your module on GitHub with no files.
+
+Install Rust by following the [instructions on their website](https://www.rust-lang.org/).
+
+This demo was tested with Python 3.10 and the following rustup/Rust versions:
+
+```
+$ rustup --version
+rustup 1.26.0 (5af9b9484 2023-04-05)
+info: This is the version for the rustup toolchain manager, not the rustc compiler.
+info: The currently active `rustc` version is `rustc 1.73.0 (cc66ad468 2023-10-03)`
+```
 
 Create a new Python 3.10 (install it beforehand) virtual environment using `venv` and switch to it.
 
@@ -16,60 +26,38 @@ python3.10 -u -m venv ~/venv-hkpythonoctwebinar ;
 source ~/venv-hkpythonoctwebinar/bin/activate && pip install --upgrade pip ;
 ```
 
-## Create a new module
+## maturin-related (Rust)
 
-Running in the above venv:
-
-```
-(venv-hkpythonoctwebinar) $ git clone git@github.com:nth10sd/hkpythonoctwebinar.git
-
-(venv-hkpythonoctwebinar) $ git clone REPLACEME
-                            ^^^^^^^^^
-
-(venv-hkpythonoctwebinar) $ cd REPLACEME
-                     ^^^^^^^^^
-
-(venv-hkpythonoctwebinar) $ cp -r ../hkpythonoctwebinar/* ../hkpythonoctwebinar/.gitignore ../hkpythonoctwebinar/.vulture_allowlist ../hkpythonoctwebinar/.github . && rm -rf build/ *.egg*-info/
-
-(venv-hkpythonoctwebinar) $ mv hkpythonoctwebinar/ REPLACEME
-                                ^^^^^^^^^
-
-(venv-hkpythonoctwebinar) $ find . ! \( -path ./.git -prune \) -type f | xargs sed -i 's/hkpythonoctwebinar/REPLACEME/g'
-                                                                                         ^^^^^^^^^
-```
-
-Install your module by running:
+Development command:
 
 ```
-(venv-hkpythonoctwebinar) $ pip install --upgrade -r requirements.txt && pip install --upgrade -e .
+cargo clippy --all-targets -- -D warnings && python -u -m pip install --upgrade pip ; pip install --upgrade -r requirements.txt && cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ && maturin develop
 ```
 
-Run your new module using:
+Switch `maturin develop` (debug Rust code) to `maturin develop --release` for optimized Rust code.
+
+
+## Running
+
+Run the module using:
 
 ```
-(venv-hkpythonoctwebinar) $ python -u -m REPLACEME
-                               ^^^^^^^^^
+(venv-hkpythonoctwebinar) $ python -u -m hkpythonoctwebinar
 ```
 
-Delete the CodeQL steps in the GitHub Actions `.yml` workflow settings file if they are not required.
+Ensure any file is present in the root folder of the `git` repository with the hardcoded filename `pydocs-v3pt12-210-copies-over-23M-lines.txt`, it will then be truncated to 1 million lines after running the following command:
+
+```
+(venv-hkpythonoctwebinar) $ python -u -m hkpythonoctwebinar.truncate
+```
 
 ## Run tools on your package
 
 (All commands here must be run within the `venv`, in the main repository directory - not any subfolders)
 
-For linters only:
-```
-for TOOL in ruff mypy pylint ; do "$TOOL" $(python -c "from pathlib import Path; exec('try: import tomllib\nexcept ImportError: import tomli as tomllib\nwith Path(\"pyproject.toml\").open(mode=\"rb\") as fp:\n cfg = tomllib.load(fp)\n print(f\'{cfg[\"project\"][\"name\"]}/{\" tests/\" if Path(\"tests/\").is_dir() else \"\"}\')')") ; done;
-```
-
 For comprehensive tests and all linters:
 ```
 python -u -m pytest --black --cov --mypy --pylint --ruff
-```
-
-For comprehensive tests and all linters **except** slow tests:
-```
-python -u -m pytest --black --cov --mypy --pylint --ruff -m "not slow"
 ```
 
 ## Documentation generation via Sphinx

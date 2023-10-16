@@ -8,7 +8,7 @@ sphinx-quickstart --sep -p "hkpythonoctwebinar" -a "FOO" -r "BAR" -l "en" \
 cp source/conf_correct.py source/conf.py;
 
 # Generate Sphinx documentation
-sphinx-apidoc -o source/ ../hkpythonoctwebinar/;
+sphinx-apidoc -o source/ ../python/hkpythonoctwebinar/;
 
 # Add "modules" to portion of index.rst in the middle of several empty lines
 tr '\n' '\f' < source/index.rst | \
