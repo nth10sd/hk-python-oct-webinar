@@ -1,0 +1,4 @@
+include hkpythonoctwebinar/_version.txt
+include hkpythonoctwebinar/py.typed
+
+prune */tests
