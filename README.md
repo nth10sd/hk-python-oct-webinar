@@ -26,6 +26,8 @@ python3.10 -u -m venv ~/venv-hkpythonoctwebinar ;
 source ~/venv-hkpythonoctwebinar/bin/activate && pip install --upgrade pip ;
 ```
 
+Clone the repository.
+
 ## maturin-related (Rust)
 
 Development command:
