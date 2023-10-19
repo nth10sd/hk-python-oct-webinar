@@ -26,7 +26,15 @@ python3.10 -u -m venv ~/venv-hkpythonoctwebinar ;
 source ~/venv-hkpythonoctwebinar/bin/activate && pip install --upgrade pip ;
 ```
 
-Clone the repository.
+Install [cargo-binstall](https://github.com/cargo-bins/cargo-binstall).
+
+Make sure Cargo is usable and use `cargo-binstall` to install `cargo-tarpaulin` (code coverage).
+
+```
+cargo binstall -y cargo-tarpaulin
+```
+
+Clone the repository and cd into it.
 
 ## maturin-related (Rust)
 
