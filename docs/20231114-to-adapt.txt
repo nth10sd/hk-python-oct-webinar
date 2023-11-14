@@ -1,0 +1,813 @@
+To adapt a standard repository from startrepo commit ecc2f7e94668bf3ef2abce39ea923a7a3398855f:
+
+1. Copy over from this repo, commit bc520f1e3e4b0c69d32bf5be236365a03638cfac:
+```
+.gitignore
+.vulture_allowlist
+Cargo.toml
+MANIFEST.in
+README.md
+pyproject.toml
+docs/gen-sphinx-html.sh
+python/hkpythonoctwebinar/__init__.py
+python/hkpythonoctwebinar/__main__.py
+python/hkpythonoctwebinar/py.typed
+python/hkpythonoctwebinar/start.py
+python/hkpythonoctwebinar/truncate.py
+python/hkpythonoctwebinar/util/__init__.py
+python/hkpythonoctwebinar/util/logging.py
+python/hkpythonoctwebinar/util/utils.py
+python/tests/__init__.py
+python/tests/test_start.py
+src/examples/samples.rs
+src/file_helpers/truncate.rs
+src/lib.rs
+```
+
+Run:
+```
+mv hkpythonoctwebinar/ REPLACEME
+```
+
+Then run:
+```
+find . ! \( -path ./.git -prune \) -type f | xargs sed -i 's/hkpythonoctwebinar/REPLACEME/g'
+```
+
+Note that refurb was disabled here due to some issue which may be fixed in the future.
+
+Adapt Rust edition, maturin and PyO3 versions if necessary.
+
+Follow new README instructions to install this maturin package.
+
+===
+
+Adapted from the following reference diff, which has a package name of `rustpy01` instead of `hkpythonoctwebinar`:
+
+===
+
+diff --git a/.gitignore b/.gitignore
+index abeab5d..9838085 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -156,4 +156,5 @@ cython_debug/
+ .vscode/
+ .idea/
+
+-/rustpy01/_version.txt
++# For maturin usage in this repo
++Cargo.lock
+diff --git a/.vulture_allowlist b/.vulture_allowlist
+index 8c7390c..4bcc6aa 100644
+--- a/.vulture_allowlist
++++ b/.vulture_allowlist
+@@ -1 +1 @@
+-cls  # First argument of a classmethod needs to have this name, according to pylint
++py_truncate_file_lines  # For demo purposes only
+diff --git a/Cargo.toml b/Cargo.toml
+new file mode 100644
+index 0000000..5a4c49e
+--- /dev/null
++++ b/Cargo.toml
+@@ -0,0 +1,19 @@
++[package]
++name = "rustpy01"
++version = "0.1.0"
++edition = "2021"
++
++# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
++[lib]
++name = "rustpy01"
++crate-type = ["cdylib", "rlib"]
++
++[dependencies]
++file_diff = "1.0.0"
++pyo3 = "0.19.2"
++testdir = "0.8.0"
++
++[profile.release]
++# debug = true      # Debug symbols for our profiler.
++lto = true        # Link-time optimization.
++codegen-units = 1 # Slower compilation but faster code.
+diff --git a/MANIFEST.in b/MANIFEST.in
+index bbc6aed..6195ab1 100644
+--- a/MANIFEST.in
++++ b/MANIFEST.in
+@@ -1,4 +1,3 @@
+-include rustpy01/_version.txt
+ include rustpy01/py.typed
+
+ prune */tests
+diff --git a/README.md b/README.md
+index e81a29e..50d9348 100644
+--- a/README.md
++++ b/README.md
+@@ -4,7 +4,17 @@
+ # README
+
+ ## Prerequisites
+-Create a new repository for your module on GitHub with no files.
++
++Install Rust by following the [instructions on their website](https://www.rust-lang.org/).
++
++This demo was tested with Python 3.10 and the following rustup/Rust versions:
++
++```
++$ rustup --version
++rustup 1.26.0 (5af9b9484 2023-04-05)
++info: This is the version for the rustup toolchain manager, not the rustc compiler.
++info: The currently active `rustc` version is `rustc 1.73.0 (cc66ad468 2023-10-03)`
++```
+
+ Create a new Python 3.10 (install it beforehand) virtual environment using `venv` and switch to it.
+
+@@ -16,62 +26,50 @@ python3.10 -u -m venv ~/venv-rustpy01 ;
+ source ~/venv-rustpy01/bin/activate && pip install --upgrade pip ;
+ ```
+
+-## Create a new module
++Install [cargo-binstall](https://github.com/cargo-bins/cargo-binstall).
+
+-Running in the above venv:
++Make sure Cargo is usable and use `cargo-binstall` to install `cargo-tarpaulin` (code coverage).
+
+ ```
+-(venv-rustpy01) $ git clone git@github.com:nth10sd/rustpy01.git
+-
+-(venv-rustpy01) $ git clone REPLACEME
+-                             ^^^^^^^^^
++cargo binstall -y cargo-tarpaulin
++```
+
+-(venv-rustpy01) $ cd REPLACEME
+-                      ^^^^^^^^^
++Clone the repository and cd into it.
+
+-(venv-rustpy01) $ cp -r ../rustpy01/* ../rustpy01/.gitignore ../rustpy01/.vulture_allowlist ../rustpy01/.github . && rm -rf build/ *.egg*-info/
++## maturin-related (Rust)
+
+-(venv-rustpy01) $ mv rustpy01/ REPLACEME
+-                                 ^^^^^^^^^
++Development command:
+
+-(venv-rustpy01) $ find . ! \( -path ./.git -prune \) -type f | xargs sed -i 's/rustpy01/REPLACEME/g'
+-                                                                                          ^^^^^^^^^
+ ```
++cargo clippy --all-targets -- -D warnings && python -u -m pip install --upgrade pip ; pip install --upgrade -r requirements.txt && cargo tarpaulin --all-targets --count --exclude-files=target/* --engine=llvm --fail-under=80 --ignored --no-dead-code --out=stdout --skip-clean --target-dir=target/tarpaulin-target/ && maturin develop
++```
++
++Switch `maturin develop` (debug Rust code) to `maturin develop --release` for optimized Rust code.
+
+-Install your module by running:
++
++## Running
++
++Run the module using:
+
+ ```
+-(venv-rustpy01) $ pip install --upgrade -r requirements.txt && pip install --upgrade -e .
++(venv-rustpy01) $ python -u -m rustpy01
+ ```
+
+-Run your new module using:
++Ensure any file is present in the root folder of the `git` repository with the hardcoded filename `pydocs-v3pt12-210-copies-over-23M-lines.txt`, it will then be truncated to 1 million lines after running the following command:
+
+ ```
+-(venv-rustpy01) $ python -u -m REPLACEME
+-                                ^^^^^^^^^
++(venv-rustpy01) $ python -u -m rustpy01.truncate
+ ```
+
+-Delete the CodeQL steps in the GitHub Actions `.yml` workflow settings file if they are not required.
+-
+ ## Run tools on your package
+
+ (All commands here must be run within the `venv`, in the main repository directory - not any subfolders)
+
+-For linters only:
+-```
+-for TOOL in ruff mypy pylint ; do "$TOOL" $(python -c "from pathlib import Path; exec('try: import tomllib\nexcept ImportError: import tomli as tomllib\nwith Path(\"pyproject.toml\").open(mode=\"rb\") as fp:\n cfg = tomllib.load(fp)\n print(f\'{cfg[\"project\"][\"name\"]}/{\" tests/\" if Path(\"tests/\").is_dir() else \"\"}\')')") ; done;
+-```
+-
+ For comprehensive tests and all linters:
+ ```
+ python -u -m pytest --black --cov --mypy --pylint --ruff
+ ```
+
+-For comprehensive tests and all linters **except** slow tests:
+-```
+-python -u -m pytest --black --cov --mypy --pylint --ruff -m "not slow"
+-```
+-
+ ## Documentation generation via Sphinx
+
+ * Change into `docs/` folder: `cd docs/`
+diff --git a/docs/gen-sphinx-html.sh b/docs/gen-sphinx-html.sh
+index ff3abad..ba8a938 100755
+--- a/docs/gen-sphinx-html.sh
++++ b/docs/gen-sphinx-html.sh
+@@ -8,7 +8,7 @@ sphinx-quickstart --sep -p "rustpy01" -a "FOO" -r "BAR" -l "en" \
+ cp source/conf_correct.py source/conf.py;
+
+ # Generate Sphinx documentation
+-sphinx-apidoc -o source/ ../rustpy01/;
++sphinx-apidoc -o source/ ../python/rustpy01/;
+
+ # Add "modules" to portion of index.rst in the middle of several empty lines
+ tr '\n' '\f' < source/index.rst | \
+diff --git a/pyproject.toml b/pyproject.toml
+index 9e2bcf1..9ba7d24 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,36 +1,25 @@
+ [build-system]
+-requires = [
+-    "setuptools >= 68.2.2",
+-    "setuptools-scm[toml] >= 7.1.0",
+-    "wheel >= 0.41.2",
+-]
+-build-backend = "setuptools.build_meta"
++requires = ["maturin ~= 1.2.3"]
++build-backend = "maturin"
+
+ [project]
+ name = "rustpy01"
+-description = "Bootstrap a project easily"
+-# Use the following command to find all places to update Python versions
+-#   rg --hidden --files | rg -v ".min.js" | xargs rg -I "3[\.]*10" | rg "(py|ver)"
++version = "0.1.0"
+ requires-python = ">=3.10"
+-# keywords = ["anything"]
+ classifiers = [
++    "Development Status :: 2 - Pre-Alpha",
+     "Intended Audience :: Developers",
+-    "License :: OSI Approved :: MIT License",
+-    "Operating System :: OS Independent",
+     "Programming Language :: Python",
+     "Programming Language :: Python :: 3",
+     "Programming Language :: Python :: 3.10",
+-    "Programming Language :: Python :: 3.11",
+-    "Programming Language :: Python :: 3.12",
++    "Programming Language :: Rust",
++    "Topic :: Utilities",
+ ]
+ dependencies = [
+-    "setuptools >= 68.2.2",
+-    "setuptools-scm[toml] >= 7.1.0",
+-    "types-setuptools==68.2.0.0",    # Bump types-* only with mypy
+-    "typing-extensions ~= 4.8.0",    # Directly import Self from typing on Python 3.11+
++    'maturin ~= 1.2.3; platform_system != "Linux"',           # patchelf is only supported on Linux
++    'maturin[patchelf] ~= 1.2.3; platform_system == "Linux"',
+     "wheel >= 0.41.2",
+ ]
+-dynamic = ["version", "readme"]
+
+ [project.optional-dependencies]
+ test = [
+@@ -52,19 +41,21 @@ test = [
+     "pytest-randomly ~= 3.15.0",
+     "pytest-ruff ~= 0.1.1",
+     "pytest-xdist ~= 3.3.1",
+-    "refurb ~= 1.21.0",
++    # "refurb ~= 1.21.0",
+     "ruff==0.0.291",
+     "semgrep ~= 1.41.0",
+     "sphinx ~= 7.2.6",
+     "vulture ~= 2.9.1",
+ ]
+
+-[tool.setuptools.dynamic]
+-version = { attr = "rustpy01.__version__" }
+-readme = { file = ["README.md", "CHANGELOG.md"] }
++[project.scripts]
++print_cli_args = "rustpy01._rustpy01:print_cli_args"
++print_something = "rustpy01._rustpy01:print_something"
+
+-[tool.setuptools_scm]
+-write_to = "rustpy01/_version.txt"
++[tool.maturin]
++features = ["pyo3/extension-module"]
++python-source = "python"
++module-name = "rustpy01._rustpy01"
+
+ ##### Other tools #####
+
+@@ -80,7 +71,7 @@ exclude_lines = [
+     "raise AssertionError",       # Ignore tests not hitting defensive assertion code
+     "raise NotImplementedError",  # Ignore tests not hitting defensive assertion code
+ ]
+-fail_under = 80 # Minimum code coverage percent
++fail_under = 20 # Minimum code coverage percent
+ show_missing = true
+
+ [tool.coverage.run]
+@@ -95,11 +86,11 @@ omit = [
+ ]
+ parallel = true
+ sigterm = true
+-source = ["rustpy01/", "tests/"]
++source = ["python/rustpy01/", "python/tests/"]
+
+ [tool.mypy]
+ disallow_any_unimported = true
+-exclude = ["build/"]
++exclude = ["build/", "target/"]
+ namespace_packages = true
+ python_version = "3.10"
+ show_error_codes = true
+@@ -107,9 +98,9 @@ strict = true
+ warn_unreachable = true
+
+ # Add Python modules to be ignored by mypy here
+-# [[tool.mypy.overrides]]
+-# module = []
+-# ignore_missing_imports = true
++[[tool.mypy.overrides]]
++module = ["rustpy01._rustpy01"]
++ignore_missing_imports = true
+
+ [tool.pylint.basic]
+ # Good variable names which should always be accepted, separated by a comma
+@@ -198,17 +189,19 @@ score = "no"
+ py-version = "3.10"
+
+ [tool.pyright]
+-exclude = ["**/node_modules", "**/__pycache__", "**/.*", "build/"]
++exclude = ["**/node_modules", "**/__pycache__", "**/.*", "build/", "target/"]
+
+ [tool.pytest.ini_options]
+ addopts = [
+     "-n=auto",
+     "--durations=7",
++    "--ignore=target/",
+     "--instafail",
+     "--no-cov-on-fail",
+     "--pylint-error-types=CRWEFI",
+     "--strict-markers",
+ ]
++filterwarnings = []
+ log_level = "DEBUG"
+ markers = ["online", "slow"]
+ xfail_strict = true
+@@ -217,6 +210,7 @@ xfail_strict = true
+ ignore = ["110"]
+
+ [tool.ruff]
++src = ["python"]
+ include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
+ select = ["ALL"]
+ ignore = [
+diff --git a/python/rustpy01/__init__.py b/python/rustpy01/__init__.py
+new file mode 100644
+index 0000000..9ae2fa5
+--- /dev/null
++++ b/python/rustpy01/__init__.py
+@@ -0,0 +1,4 @@
++"""Module details."""
++
++__title__ = "rustpy01"
++__version__ = "0.1.0"
+diff --git a/rustpy01/__main__.py b/python/rustpy01/__main__.py
+similarity index 100%
+rename from rustpy01/__main__.py
+rename to python/rustpy01/__main__.py
+diff --git a/rustpy01/py.typed b/python/rustpy01/py.typed
+similarity index 100%
+rename from rustpy01/py.typed
+rename to python/rustpy01/py.typed
+diff --git a/rustpy01/start.py b/python/rustpy01/start.py
+similarity index 60%
+rename from rustpy01/start.py
+rename to python/rustpy01/start.py
+index c824822..e725c9c 100644
+--- a/rustpy01/start.py
++++ b/python/rustpy01/start.py
+@@ -4,7 +4,9 @@ from __future__ import annotations
+
+ from logging import INFO as INFO_LOG_LEVEL
+
+-from rustpy01.common import LOSDevice
++# pylint: disable=no-name-in-module
++from rustpy01._rustpy01 import print_something
++from rustpy01._rustpy01 import sum_as_string
+ from rustpy01.util.logging import get_logger
+ from rustpy01.util.utils import add_one
+
+@@ -14,6 +16,9 @@ RUN_LOG.setLevel(INFO_LOG_LEVEL)
+
+ def main() -> None:
+     """Start."""
+-    LOSDevice("NewType")
+     RUN_LOG.warning(add_one(2))
+     RUN_LOG.error("foo")
++
++    RUN_LOG.info("Rust functions below:")
++    print_something()
++    RUN_LOG.info(sum_as_string(2, 3))
+diff --git a/python/rustpy01/truncate.py b/python/rustpy01/truncate.py
+new file mode 100644
+index 0000000..e9d9983
+--- /dev/null
++++ b/python/rustpy01/truncate.py
+@@ -0,0 +1,42 @@
++"""Sample code involving truncation."""
++
++from collections import deque
++from itertools import islice
++from pathlib import Path
++from typing import TYPE_CHECKING
++from typing import Any
++
++# pylint: disable=no-name-in-module
++from rustpy01._rustpy01 import truncate_file_lines
++
++if TYPE_CHECKING:
++    from collections.abc import Callable
++    from collections.abc import Iterable
++
++
++def py_truncate_file_lines(filename: Path | str, lines: int) -> None:
++    """Truncate files to the desired number of lines.
++
++    Adapted from https://stackoverflow.com/a/27672002
++
++    :param filename: Filename of file to truncate
++    :param lines: Desired number of lines to retain
++    """
++    with Path(filename).open("r+", encoding="utf-8", errors="surrogateescape") as f:
++        blackhole: Callable[[Iterable[Any]], None] = deque((), 0).extend
++        file_iterator = iter(f.readline, "")
++        blackhole(islice(file_iterator, lines))
++        f.truncate(f.tell())
++
++
++def sample_truncation() -> None:
++    """Sample truncation."""
++    root_folder = Path(__file__).parents[2]
++    desired_file = root_folder / "pydocs-v3pt12-210-copies-over-23M-lines.txt"
++
++    if desired_file.is_file():
++        # Swap this with py_truncate_file_lines or vice versa
++        truncate_file_lines(desired_file, 1000000)
++
++
++sample_truncation()
+diff --git a/rustpy01/devices/__init__.py b/python/rustpy01/util/__init__.py
+similarity index 100%
+rename from rustpy01/devices/__init__.py
+rename to python/rustpy01/util/__init__.py
+diff --git a/rustpy01/util/logging.py b/python/rustpy01/util/logging.py
+similarity index 100%
+rename from rustpy01/util/logging.py
+rename to python/rustpy01/util/logging.py
+diff --git a/rustpy01/util/utils.py b/python/rustpy01/util/utils.py
+similarity index 100%
+rename from rustpy01/util/utils.py
+rename to python/rustpy01/util/utils.py
+diff --git a/rustpy01/util/__init__.py b/python/tests/__init__.py
+similarity index 100%
+rename from rustpy01/util/__init__.py
+rename to python/tests/__init__.py
+diff --git a/tests/test_start.py b/python/tests/test_start.py
+similarity index 100%
+rename from tests/test_start.py
+rename to python/tests/test_start.py
+diff --git a/rustpy01/__init__.py b/rustpy01/__init__.py
+deleted file mode 100644
+index 1545865..0000000
+--- a/rustpy01/__init__.py
++++ /dev/null
+@@ -1,6 +0,0 @@
+-"""Module details."""
+-
+-from pathlib import Path
+-
+-__title__ = "rustpy01"
+-__version__ = (Path(__file__).parent / "_version.txt").read_text(encoding="utf-8")
+diff --git a/rustpy01/common.py b/rustpy01/common.py
+deleted file mode 100644
+index 30ad7aa..0000000
+--- a/rustpy01/common.py
++++ /dev/null
+@@ -1,35 +0,0 @@
+-"""Define objects common to all devices."""
+-
+-from __future__ import annotations
+-
+-from typing import TYPE_CHECKING
+-
+-if TYPE_CHECKING:
+-    from typing_extensions import Self  # Directly import from typing on Python 3.11+
+-
+-
+-# class LOSDeviceError(Exception):
+-#     """Error class unique to LOSDevice objects."""
+-
+-
+-class LOSDevice:
+-    """A device that supports Lineage OS.
+-
+-    :param new_type: This is a new type for LOSDevice
+-    """
+-
+-    def __init__(self, new_type: str) -> None:
+-        """Initialize the LOSDevice."""
+-        self.new_type = new_type
+-
+-    @classmethod
+-    def main(cls: type[Self]) -> None:
+-        """LOSDevice main method."""
+-
+-    @staticmethod
+-    def create() -> str:
+-        """Build a shell.
+-
+-        :return: A testing string
+-        """
+-        return "FOO"
+diff --git a/rustpy01/devices/oneplus3t.py b/rustpy01/devices/oneplus3t.py
+deleted file mode 100644
+index f2ec14c..0000000
+--- a/rustpy01/devices/oneplus3t.py
++++ /dev/null
+@@ -1,26 +0,0 @@
+-"""Code related to a OnePlus 3T."""
+-
+-from __future__ import annotations
+-
+-from rustpy01.common import LOSDevice
+-
+-# class OP3TError(Exception):
+-#     """Error class unique to OP3T objects."""
+-
+-
+-class OP3T(LOSDevice):
+-    """OnePlus 3T object."""
+-
+-    def __init__(self) -> None:
+-        """Initialize the OP3T."""
+-        super().__init__("")
+-
+-    # @classmethod
+-    # def main(cls) -> None:
+-    #     """OP3T main method.
+-    #     """
+-
+-    # @staticmethod
+-    # def create() -> None:
+-    #     """Build a shell.
+-    #     """
+diff --git a/rustpy01/devices/oneplus6t.py b/rustpy01/devices/oneplus6t.py
+deleted file mode 100644
+index be6526f..0000000
+--- a/rustpy01/devices/oneplus6t.py
++++ /dev/null
+@@ -1,26 +0,0 @@
+-"""Code related to a OnePlus 6T."""
+-
+-from __future__ import annotations
+-
+-from rustpy01.common import LOSDevice
+-
+-# class OP6TError(Exception):
+-#     """Error class unique to OP6T objects."""
+-
+-
+-class OP6T(LOSDevice):
+-    """OnePlus 6T object."""
+-
+-    def __init__(self) -> None:
+-        """Initialize the OP6T."""
+-        super().__init__("")
+-
+-    # @classmethod
+-    # def main(cls) -> None:
+-    #     """OP6T main method.
+-    #     """
+-
+-    # @staticmethod
+-    # def create() -> None:
+-    #     """Build a shell.
+-    #     """
+diff --git a/src/examples/samples.rs b/src/examples/samples.rs
+new file mode 100644
+index 0000000..97c2ba6
+--- /dev/null
++++ b/src/examples/samples.rs
+@@ -0,0 +1,59 @@
++use pyo3::prelude::{pyfunction, PyResult, Python};
++use std::env;
++
++/// Formats the sum of two numbers as string.
++#[pyfunction]
++pub fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
++    Ok((a + b).to_string())
++}
++
++#[pyfunction]
++pub fn print_something() -> PyResult<()> {
++    println!("This is from Rust");
++    Ok(())
++}
++
++#[cfg(not(tarpaulin_include))]
++#[pyfunction]
++pub fn print_cli_args(py: Python) -> PyResult<()> {
++    // This one includes python and the name of the wrapper script itself, e.g.
++    // `["/home/ferris/.venv/bin/python", "/home/ferris/.venv/bin/print_cli_args", "a",
++    //   "b", "c"]`
++    println!("{:?}", env::args().collect::<Vec<_>>());
++    // This one includes only the name of the wrapper script itself, e.g.
++    // `["/home/ferris/.venv/bin/print_cli_args", "a", "b", "c"])`
++    println!(
++        "{:?}",
++        py.import("sys")?
++            .getattr("argv")?
++            .extract::<Vec<String>>()?
++    );
++    Ok(())
++}
++
++#[cfg(test)]
++mod mod_test_sum_as_string {
++    use super::sum_as_string;
++
++    #[test]
++    fn test_sum_as_string() -> Result<(), String> {
++        let _expected_output = String::from("5");
++        match sum_as_string(2, 3) {
++            Ok(_expected_output) => Ok(()),
++            _ => Err(String::from("Two plus three does not equal five")),
++        }
++    }
++}
++
++#[cfg(test)]
++mod mod_test_print_something {
++    use super::print_something;
++
++    #[test]
++    fn test_print_something() -> Result<(), String> {
++        match print_something() {
++            Ok(()) => Ok(()),
++            _ => Err(String::from("Nothing was printed")),
++        }
++    }
++}
+diff --git a/src/file_helpers/truncate.rs b/src/file_helpers/truncate.rs
+new file mode 100644
+index 0000000..2032b61
+--- /dev/null
++++ b/src/file_helpers/truncate.rs
+@@ -0,0 +1,60 @@
++use pyo3::prelude::{pyfunction, PyResult};
++use std::fs::{rename, File};
++use std::io::{BufRead, BufReader, LineWriter, Write};
++use std::path::PathBuf;
++
++/// Truncate file to the desired size
++#[pyfunction]
++pub fn truncate_file_lines(in_file: PathBuf, filesize: u64) -> PyResult<()> {
++    let tmp_in_file = in_file.to_string_lossy();
++    let tmp_filename = format!("{tmp_in_file}~"); // Create new filename with the tilde appended
++    let mut g = LineWriter::new(File::create(&tmp_filename)?);
++
++    for (idx, line) in BufReader::new(File::open(&in_file)?).lines().enumerate() {
++        if idx >= filesize.try_into()? {
++            break;
++        }
++        writeln!(g, "{}", line?)?;
++    }
++
++    g.flush()?;
++    rename(&tmp_filename, &in_file)?;
++
++    Ok(())
++}
++
++#[cfg(test)]
++mod mod_test_truncate_file_lines {
++    use file_diff::diff_files;
++    use std::fs::File;
++    use testdir::testdir;
++
++    use super::truncate_file_lines;
++
++    #[test]
++    fn test_truncate_file_lines() {
++        let test_dir = testdir!();
++
++        let test_path = test_dir.join("data.txt");
++        std::fs::write(&test_path, "12345\n67\n890\n").ok().unwrap();
++        assert!(&test_path.exists());
++
++        let test_path_a = test_dir.join("expected_truncated_data_a.txt");
++        std::fs::write(&test_path_a, "12345\n67\n").ok().unwrap();
++        assert!(test_path_a.exists());
++        truncate_file_lines(test_path.clone(), 2).unwrap();
++        assert!(diff_files(
++            &mut File::open(&test_path).unwrap(),
++            &mut File::open(&test_path_a).unwrap()
++        ));
++
++        let test_path_b = test_dir.join("expected_truncated_data_b.txt");
++        std::fs::write(&test_path_b, "12345\n").ok().unwrap();
++        assert!(test_path_b.exists());
++        truncate_file_lines(test_path.clone(), 1).unwrap();
++        assert!(diff_files(
++            &mut File::open(&test_path).unwrap(),
++            &mut File::open(&test_path_b).unwrap()
++        ));
++    }
++}
+diff --git a/src/lib.rs b/src/lib.rs
+new file mode 100644
+index 0000000..e8e935a
+--- /dev/null
++++ b/src/lib.rs
+@@ -0,0 +1,23 @@
++use examples::samples::{print_cli_args, print_something, sum_as_string};
++use file_helpers::truncate::truncate_file_lines;
++use pyo3::prelude::{pymodule, wrap_pyfunction, PyModule, PyResult, Python};
++
++mod examples {
++    pub mod samples;
++}
++mod file_helpers {
++    pub mod truncate;
++}
++
++/// A Python module implemented in Rust.
++#[cfg(not(tarpaulin_include))]
++#[pymodule]
++fn _rustpy01(_py: Python, m: &PyModule) -> PyResult<()> {
++    m.add_function(wrap_pyfunction!(truncate_file_lines, m)?)?;
++
++    // Examples
++    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
++    m.add_wrapped(wrap_pyfunction!(print_cli_args))?;
++    m.add_wrapped(wrap_pyfunction!(print_something))?;
++    Ok(())
++}
+diff --git a/tests/__init__.py b/tests/__init__.py
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/tests/devices/__init__.py b/tests/devices/__init__.py
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/tests/devices/test_oneplus3t.py b/tests/devices/test_oneplus3t.py
+deleted file mode 100644
+index 154c359..0000000
+--- a/tests/devices/test_oneplus3t.py
++++ /dev/null
+@@ -1,12 +0,0 @@
+-"""OP3T tests."""
+-
+-# ruff: noqa: S101
+-
+-from __future__ import annotations
+-
+-from rustpy01.devices.oneplus3t import OP3T
+-
+-
+-def test_op3t() -> None:
+-    """Test the OP3T class."""
+-    assert OP3T()
+diff --git a/tests/devices/test_oneplus6t.py b/tests/devices/test_oneplus6t.py
+deleted file mode 100644
+index b8dd86a..0000000
+--- a/tests/devices/test_oneplus6t.py
++++ /dev/null
+@@ -1,12 +0,0 @@
+-"""OP6T tests."""
+-
+-# ruff: noqa: S101
+-
+-from __future__ import annotations
+-
+-from rustpy01.devices.oneplus6t import OP6T
+-
+-
+-def test_op6t() -> None:
+-    """Test the OP6T class."""
+-    assert OP6T()
+diff --git a/tests/test_common.py b/tests/test_common.py
+deleted file mode 100644
+index 8e05954..0000000
+--- a/tests/test_common.py
++++ /dev/null
+@@ -1,14 +0,0 @@
+-"""Common tests."""
+-
+-# ruff: noqa: S101
+-
+-from __future__ import annotations
+-
+-from rustpy01.common import LOSDevice
+-
+-
+-def test_losdevice() -> None:
+-    """Test the LOSDevice class."""
+-    device = LOSDevice("NewType")
+-    assert device.new_type == "NewType"
+-    assert device.create() == "FOO"
