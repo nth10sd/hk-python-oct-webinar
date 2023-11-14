@@ -2,7 +2,14 @@ To adapt a standard repository from startrepo commit ecc2f7e94668bf3ef2abce39ea9
 
 First remove `.github/` directory for all GitHub Actions templates.
 
-Next, remove `CHANGELOG.md`, and other files (e.g. in the `devices/` folder) in the template that are not in the reference maturin repo.
+Next, remove `CHANGELOG.md`, and other files (e.g. in the `devices/` folder) in the template that are not in the reference maturin repo:
+```
+REPLACEME/_version.txt (if any)
+REPLACEME/common.py
+REPLACEME/devices/
+tests/devices/
+tests/test_common.py
+```
 
 Copy over from this repo, commit bc520f1e3e4b0c69d32bf5be236365a03638cfac:
 ```
