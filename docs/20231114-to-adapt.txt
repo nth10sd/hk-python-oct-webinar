@@ -39,15 +39,11 @@ src/lib.rs
 
 Run:
 ```
-mv hkpythonoctwebinar/ REPLACEME
-```
-
-Then run:
-```
 find . ! \( -path ./.git -prune \) -type f | xargs sed -i 's/hkpythonoctwebinar/REPLACEME/g'
 ```
 
-Note that refurb was disabled here due to some issue which may be fixed in the future.
+Audit `pyproject.toml` from top to bottom, looking especially at removed lines (which should have newer dependency versions that we want to keep)
+Note that refurb may need to be disabled due to some issue which may be fixed in the future.
 
 Adapt Rust edition, maturin and PyO3 versions if necessary.
 
